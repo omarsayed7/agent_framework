@@ -1,4 +1,4 @@
-from models import AllModelEnum
+from agent_framework.models.providers import AllModelEnum
 from typing import List
 from pydantic import BaseModel, Field
 
@@ -17,3 +17,4 @@ class AgentCharacter(BaseModel):
         description="Message examples for the character agent"
     )
     model_provider: AllModelEnum = Field(description="Select the LLM to the agent")
+    tools: List[str] = Field(description="List of tools that the LLM is gonna use")
