@@ -1,7 +1,7 @@
-from agent_framework.models.agent import AgentCharacter
-from agent_framework.helpers import load_character
-from agent_framework.providers import get_model
-from agent_framework.tools import get_websearch_tool
+from models.agent import AgentCharacter
+from helpers import load_character
+from providers import get_model
+from tools import get_websearch_tool
 
 from typing import Annotated, Optional
 from typing_extensions import TypedDict

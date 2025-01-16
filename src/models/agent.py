@@ -1,4 +1,4 @@
-from agent_framework.models.providers import AllModelEnum
+from models.providers import AllModelEnum
 from typing import List
 from pydantic import BaseModel, Field
 

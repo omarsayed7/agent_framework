@@ -1,4 +1,4 @@
-from agent_framework.agents import BaseAgent
+from agents import BaseAgent
 from dotenv import load_dotenv
 
 load_dotenv()

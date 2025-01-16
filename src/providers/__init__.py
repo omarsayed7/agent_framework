@@ -8,7 +8,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 
-from agent_framework.models.providers import (
+from models.providers import (
     AllModelEnum,
     AnthropicModelName,
     FakeModelName,
