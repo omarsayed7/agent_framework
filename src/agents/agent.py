@@ -2,7 +2,7 @@ from models.agent import AgentCharacter
 from helpers import load_character
 from providers import get_model
 from tools import get_websearch_tool
-
+from agents.mongoDb_saver import AsyncMongoDBSaver
 from typing import Annotated, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START
@@ -24,7 +24,7 @@ class BaseAgent:
         self.character = AgentCharacter(**character_data)
         self.llm = self._setup_llm_provide()
         self.tools = self._setup_tools()
-        self.memory = MemorySaver()
+        self.memory = AsyncMongoDBSaver()
         self.agent = self._build_graph()
         # Cache for system prompt
         self._system_prompt = None
@@ -54,7 +54,7 @@ class BaseAgent:
         )
         graph_builder.add_edge("tools", "chatbot")
         graph_builder.add_edge(START, "chatbot")
-        self.graph = graph_builder.compile(checkpointer=self.memory)
+        graph = graph_builder.compile(checkpointer=self.memory)
         """
         # warmup
         for event in self.graph.stream(
@@ -64,7 +64,7 @@ class BaseAgent:
         ):
             event["messages"][-1].pretty_print()
         """
-        return self.graph
+        return graph
 
     def call_model(self, state: State):
         return {"messages": [self.llm_with_tools.invoke(state["messages"])]}
@@ -89,24 +89,25 @@ class BaseAgent:
         print(self._system_prompt)
         return self._system_prompt
 
-    def prompt_llm(self, prompt: str, system_prompt: str = None) -> str:
+    async def prompt_llm(
+        self, session_id: str, prompt: str, system_prompt: str = None
+    ) -> str:
         """Generate text using the configured LLM provider"""
         system_prompt = system_prompt or self._construct_system_prompt()
-        if (
-            len(
-                self.graph.get_state(
-                    config={"configurable": {"thread_id": 42}},
-                ).values.get("messages", [])
+        past_messages = (
+            await self.agent.aget_state(
+                config={"configurable": {"thread_id": session_id}}
             )
-            == 0
-        ):
-            self.graph.update_state(
-                {"configurable": {"thread_id": 42}},
+        ).values.get("messages")
+        if not past_messages:
+            await self.agent.aupdate_state(
+                {"configurable": {"thread_id": session_id}},
                 {"messages": [SystemMessage(content=system_prompt)]},
             )
         sent_message = HumanMessage(content=prompt)
-        final_state = self.graph.invoke(
-            {"messages": [sent_message]}, config={"configurable": {"thread_id": 42}}
+        final_state = await self.agent.ainvoke(
+            {"messages": [sent_message]},
+            config={"configurable": {"thread_id": session_id}},
         )
         return final_state["messages"][-1].content
 

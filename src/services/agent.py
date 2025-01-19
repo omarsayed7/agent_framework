@@ -191,7 +191,7 @@ async def stream(user_input) -> StreamingResponse:
 
 
 @router.post("/invoke", tags=["invoke"])
-async def invoke(user_input, agent_id: str = "1"):
+async def invoke(user_input, agent_id: str = "1", session_id: str = "1"):
     """
     Invoke an agent with user input to retrieve a final response.
 
@@ -200,13 +200,12 @@ async def invoke(user_input, agent_id: str = "1"):
     is also attached to messages for recording feedback.
     """
     agent = BaseAgent(character_file_name="default_character.json")
-    agent: CompiledStateGraph = agent.agent
-    kwargs, run_id = _parse_input(user_input)
+    # agent: CompiledStateGraph = agent.agent
+    # kwargs, run_id = _parse_input(user_input)
     try:
-        response = await agent.ainvoke(**kwargs)
-        output = response["messages"][-1]
-        output.run_id = str(run_id)
-        return output
+        response = await agent.prompt_llm(session_id=session_id, prompt=user_input)
+        # output = response["messages"][-1]
+        return response
     except Exception as e:
         logger.error(f"An exception occurred: {e}")
         raise HTTPException(status_code=500, detail="Unexpected error")

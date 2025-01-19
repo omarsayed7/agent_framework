@@ -1,14 +1,22 @@
-"""
+import asyncio
 from agents import BaseAgent
 from dotenv import load_dotenv
 
 load_dotenv()
 
-if __name__ == "__main__":
-    agent = BaseAgent(character_file_name="default_character.json")
-    print(agent.prompt_llm("Hello! What is your name?"))
 
-"""
+# async def main():
+#     agent = BaseAgent(character_file_name="default_character.json")
+#     # Run tasks concurrently using asyncio.gather
+#     await asyncio.gather(
+#         agent.prompt_llm(session_id="11", prompt="Hello! What is your name?")
+#     )
+
+
+# if __name__ == "__main__":
+#     # Run the main function
+#     asyncio.run(main())
+
 
 # Run the application with uvicorn:
 # uvicorn main:app --reload
