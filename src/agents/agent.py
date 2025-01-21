@@ -75,7 +75,10 @@ class BaseAgent:
             prompt_parts = []
             prompt_parts.append(f"You are {self.character.name} \n")
             prompt_parts.extend(self.character.bio)
-
+            prompt_parts.append(f"\n")
+            prompt_parts.append(f"You have a certain tools \n")
+            prompt_parts.extend(self.character.tools)
+            prompt_parts.append("\n You may use it to perfrom your tasks. \n")
             if self.character.message_examples:
                 prompt_parts.append(
                     "\nHere are some examples of your style (Please avoid repeating any of these):"
