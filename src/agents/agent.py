@@ -66,8 +66,8 @@ class BaseAgent:
         """
         return graph
 
-    def call_model(self, state: State):
-        return {"messages": [self.llm_with_tools.invoke(state["messages"])]}
+    async def call_model(self, state: State):
+        return {"messages": [await self.llm_with_tools.ainvoke(state["messages"])]}
 
     def _construct_system_prompt(self) -> str:
         """Construct the system prompt from agent configuration"""
@@ -114,5 +114,24 @@ class BaseAgent:
         )
         return final_state["messages"][-1].content
 
-    async def stream_execute(self) -> None:
-        pass
+    async def stream_execute(
+        self, session_id: str, prompt: str, system_prompt: str = None
+    ):
+        system_prompt = system_prompt or self._construct_system_prompt()
+        past_messages = (
+            await self.agent.aget_state(
+                config={"configurable": {"thread_id": session_id}}
+            )
+        ).values.get("messages")
+        if not past_messages:
+            await self.agent.aupdate_state(
+                {"configurable": {"thread_id": session_id}},
+                {"messages": [SystemMessage(content=system_prompt)]},
+            )
+        sent_message = HumanMessage(content=prompt)
+        results = self.agent.astream(
+            {"messages": [sent_message]},
+            stream_mode="messages",
+            config={"configurable": {"thread_id": session_id}},
+        )
+        return results
