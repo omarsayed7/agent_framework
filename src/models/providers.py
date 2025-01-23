@@ -30,6 +30,7 @@ class GoogleModelName(StrEnum):
 
     GEMINI_15_FLASH = "gemini-1.5-flash"
     GEMINI_15_PRO = "gemini-1.5-pro"
+    GEMINI_2_FLASH = "gemini-2.0-flash-exp"
 
 
 class GroqModelName(StrEnum):
