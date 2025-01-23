@@ -3,6 +3,7 @@ from helpers import load_character
 from providers import get_model
 from tools import get_websearch_tool
 from agents.mongoDb_saver import AsyncMongoDBSaver
+from agents.prompts import CORE_SYSTEMT_PROMPT
 from typing import Annotated, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START
@@ -72,24 +73,24 @@ class BaseAgent:
     def _construct_system_prompt(self) -> str:
         """Construct the system prompt from agent configuration"""
         if self._system_prompt is None:
-            prompt_parts = []
-            prompt_parts.append(f"You are {self.character.name} \n")
-            prompt_parts.extend(self.character.bio)
-            prompt_parts.append(f"\n")
-            prompt_parts.append(f"You have a certain tools \n")
-            prompt_parts.extend(self.character.tools)
-            prompt_parts.append("\n You may use it to perfrom your tasks. \n")
-            if self.character.message_examples:
-                prompt_parts.append(
-                    "\nHere are some examples of your style (Please avoid repeating any of these):"
-                )
-                if self.character.message_examples:
-                    prompt_parts.extend(
-                        f"- {example}" for example in self.character.message_examples
-                    )
+            # Convert the list fields (message_examples, style, traits) to strings
+            bio = "\n".join(self.character.bio)
+            personality = "\n".join(self.character.personality)
+            backstory = "\n".join(self.character.backstory)
+            message_examples = "\n".join(self.character.message_examples)
+            style = "\n".join(self.character.style)
+            traits = "\n".join(self.character.traits)
+            self._system_prompt = CORE_SYSTEMT_PROMPT.format(
+                name=self.character.name,
+                age=self.character.age,
+                bio=bio,
+                personality=personality,
+                backstory=backstory,
+                message_examples=message_examples,
+                style=style,
+                traits=traits,
+            )
 
-            self._system_prompt = "\n".join(prompt_parts)
-        print(self._system_prompt)
         return self._system_prompt
 
     async def prompt_llm(
@@ -97,6 +98,8 @@ class BaseAgent:
     ) -> str:
         """Generate text using the configured LLM provider"""
         system_prompt = system_prompt or self._construct_system_prompt()
+        print("System prompt:")
+        print(system_prompt)
         past_messages = (
             await self.agent.aget_state(
                 config={"configurable": {"thread_id": session_id}}
@@ -118,6 +121,8 @@ class BaseAgent:
         self, session_id: str, prompt: str, system_prompt: str = None
     ):
         system_prompt = system_prompt or self._construct_system_prompt()
+        print("System prompt:")
+        print(system_prompt)
         past_messages = (
             await self.agent.aget_state(
                 config={"configurable": {"thread_id": session_id}}
