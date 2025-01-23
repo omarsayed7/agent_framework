@@ -240,7 +240,8 @@ class TelegramConnection:
                     message_thread_id=get_thread_id(update),
                 )
                 stream_response = await self.agent.stream_execute(
-                    session_id="22", prompt=prompt
+                    session_id=str(f"telegram_{user_name}_{user_id}_{chat_id}"),
+                    prompt=prompt,
                 )
                 i = 0
                 prev = ""
@@ -349,7 +350,7 @@ class TelegramConnection:
                     nonlocal total_tokens
                     response, total_tokens = (
                         await self.agent.prompt_llm(
-                            session_id=str(f"telegram_{user_name}_{user_id}"),
+                            session_id=str(f"telegram_{user_name}_{user_id}_{chat_id}"),
                             prompt=prompt,
                         ),
                         10,
