@@ -4,6 +4,11 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 
 
+class Connection(BaseModel):
+    name: str
+    actions: list
+
+
 class AgentCharacter(BaseModel):
     name: str = Field(
         description="Character name.",
@@ -28,6 +33,10 @@ class AgentCharacter(BaseModel):
     tools: List[str] = Field(
         description="List of tools that the LLM is gonna use",
         examples=["What is the weather in Tokyo?"],
+    )
+    connections: List[Connection] = Field(
+        description="List of connections that the agent will interacte with",
+        examples=[{"name": "telegram", "actions": ["handle_messages"]}],
     )
 
 
