@@ -11,6 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import RemoveMessage
 
 
 class State(TypedDict):
@@ -129,6 +130,7 @@ class BaseAgent:
             )
         ).values.get("messages")
         if not past_messages:
+            print("first time")
             await self.agent.aupdate_state(
                 {"configurable": {"thread_id": session_id}},
                 {"messages": [SystemMessage(content=system_prompt)]},
@@ -140,3 +142,40 @@ class BaseAgent:
             config={"configurable": {"thread_id": session_id}},
         )
         return results
+
+    async def memory_reset(self, session_id: str):
+        """
+        Erase all messages associated with the given `thread_id` from the agent's state.
+
+        Args:
+            state: The current state of the agent, containing a list of messages.
+            thread_id: The thread ID for which messages should be erased.
+
+        Returns:
+            A new AgentState with the filtered messages.
+        """
+        config = {"configurable": {"thread_id": session_id}}
+        past_messages = (await self.agent.aget_state(config=config)).values.get(
+            "messages"
+        )
+        print(past_messages)
+        # await self.agent.aupdate_state(
+        #     config, {"messages": [RemoveMessage(id=m.id) for m in past_messages]}
+        # )
+        # tasks = [
+        #     asyncio.create_task(
+        #         self.agent.aupdate_state(
+        #             config,
+        #             {"messages": RemoveMessage(id=message.id)},
+        #         )
+        #     )
+        #     for message in past_messages
+        # ]
+        # for task in tasks:
+        #     await task
+        await self.memory.aclear_by_thread_id(config=config)
+        print("here")
+        past_messages = (await self.agent.aget_state(config=config)).values.get(
+            "messages"
+        )
+        print(past_messages)

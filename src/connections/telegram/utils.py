@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import requests
 import asyncio
 import itertools
 import json
@@ -9,6 +9,25 @@ import os
 import telegram
 from telegram import Message, MessageEntity, Update, ChatMember, constants
 from telegram.ext import CallbackContext, ContextTypes
+from models.connections import TelegramBotInfo
+from pydantic import ValidationError
+
+
+def get_bot_info(token: str) -> TelegramBotInfo:
+    """
+    Fetch Telegram Bot information based on the token.
+    """
+    url = f"https://api.telegram.org/bot{token}/getMe"
+    response = requests.get(url)
+    if response.status_code == 200:
+        try:
+            # Parse the JSON response into the Pydantic model
+            bot_info = TelegramBotInfo(**response.json()["result"])
+            return bot_info
+        except ValidationError as e:
+            raise Exception(f"Failed to parse bot info: {e}")
+    else:
+        raise Exception(f"Failed to fetch bot info: {response.status_code}")
 
 
 def message_text(message: Message) -> str:

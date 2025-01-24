@@ -58,6 +58,7 @@ from connections.telegram.utils import (
     is_direct_result,
     handle_direct_result,
     cleanup_intermediate_files,
+    get_bot_info,
 )
 from connections.telegram.helper import localized_text
 
@@ -83,6 +84,8 @@ class TelegramConnection:
         """
         self.config = config
         self.agent = agent
+        self.bot_info = get_bot_info(self.config["token"])
+        print(self.bot_info)
         bot_language = self.config["bot_language"]
         self.commands = [
             BotCommand(
@@ -92,10 +95,6 @@ class TelegramConnection:
             BotCommand(
                 command="reset",
                 description=localized_text("reset_description", bot_language),
-            ),
-            BotCommand(
-                command="resend",
-                description=localized_text("resend_description", bot_language),
             ),
         ]
 
@@ -127,60 +126,21 @@ class TelegramConnection:
         )
         await update.message.reply_text(help_text, disable_web_page_preview=True)
 
-    async def resend(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Resend the last request
-        """
-        if not await is_allowed(self.config, update, context):
-            logging.warning(
-                f"User {update.message.from_user.name}  (id: {update.message.from_user.id})"
-                f" is not allowed to resend the message"
-            )
-            await self.send_disallowed_message(update, context)
-            return
-
-        chat_id = update.effective_chat.id
-        if chat_id not in self.last_message:
-            logging.warning(
-                f"User {update.message.from_user.name} (id: {update.message.from_user.id})"
-                f" does not have anything to resend"
-            )
-            await update.effective_message.reply_text(
-                message_thread_id=get_thread_id(update),
-                text=localized_text("resend_failed", self.config["bot_language"]),
-            )
-            return
-
-        # Update message text, clear self.last_message and send the request to prompt
-        logging.info(
-            f"Resending the last prompt from user: {update.message.from_user.name} "
-            f"(id: {update.message.from_user.id})"
-        )
-        with update.message._unfrozen() as message:
-            message.text = self.last_message.pop(chat_id)
-
-        await self.prompt(update=update, context=context)
-
     async def reset(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Resets the conversation.
         """
-        if not await is_allowed(self.config, update, context):
-            logging.warning(
-                f"User {update.message.from_user.name} (id: {update.message.from_user.id}) "
-                f"is not allowed to reset the conversation"
-            )
-            await self.send_disallowed_message(update, context)
-            return
-
         logging.info(
             f"Resetting the conversation for user {update.message.from_user.name} "
             f"(id: {update.message.from_user.id})..."
         )
 
+        user_name = update.message.from_user.name
         chat_id = update.effective_chat.id
-        reset_content = message_text(update.message)
-        self.openai.reset_chat_history(chat_id=chat_id, content=reset_content)
+        user_id = update.message.from_user.id
+        await self.agent.memory_reset(
+            session_id=f"telegram_{user_name}_{user_id}_{chat_id}"
+        )
         await update.effective_message.reply_text(
             message_thread_id=get_thread_id(update),
             text=localized_text("reset_done", self.config["bot_language"]),
@@ -204,7 +164,7 @@ class TelegramConnection:
         self.last_message[chat_id] = prompt
 
         if is_group_chat(update):
-            trigger_keyword = "@test_lotion_bot"
+            trigger_keyword = f"@{self.bot_info.username}"
 
             if prompt.lower().startswith(
                 trigger_keyword.lower()
@@ -688,7 +648,6 @@ class TelegramConnection:
         application.add_handler(CommandHandler("reset", self.reset))
         application.add_handler(CommandHandler("help", self.help))
         application.add_handler(CommandHandler("start", self.help))
-        application.add_handler(CommandHandler("resend", self.resend))
         application.add_handler(
             CommandHandler(
                 "chat",
