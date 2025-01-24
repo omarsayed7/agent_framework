@@ -13,6 +13,14 @@
         "Could you tell me more about what’s on your mind?",
         "I see. That sounds important to you. Let's explore that a bit further."
     ],
-    "model_provider": "gemini-1.5-flash",
-    "tools": []
+    "model_provider": "gemini-2.0-flash-exp",
+    "tools": [],
+    "connections": [
+        {
+            "name": "telegram",
+            "actions": [
+                "handle_messages"
+            ]
+        }
+    ]
 }

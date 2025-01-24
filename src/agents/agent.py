@@ -3,6 +3,7 @@ from helpers import load_character
 from providers import get_model
 from tools import get_websearch_tool
 from agents.mongoDb_saver import AsyncMongoDBSaver
+from agents.prompts import CORE_SYSTEMT_PROMPT
 from typing import Annotated, Optional
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START
@@ -10,6 +11,7 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import RemoveMessage
 
 
 class State(TypedDict):
@@ -66,27 +68,30 @@ class BaseAgent:
         """
         return graph
 
-    def call_model(self, state: State):
-        return {"messages": [self.llm_with_tools.invoke(state["messages"])]}
+    async def call_model(self, state: State):
+        return {"messages": [await self.llm_with_tools.ainvoke(state["messages"])]}
 
     def _construct_system_prompt(self) -> str:
         """Construct the system prompt from agent configuration"""
         if self._system_prompt is None:
-            prompt_parts = []
-            prompt_parts.append(f"You are {self.character.name} \n")
-            prompt_parts.extend(self.character.bio)
+            # Convert the list fields (message_examples, style, traits) to strings
+            bio = "\n".join(self.character.bio)
+            personality = "\n".join(self.character.personality)
+            backstory = "\n".join(self.character.backstory)
+            message_examples = "\n".join(self.character.message_examples)
+            style = "\n".join(self.character.style)
+            traits = "\n".join(self.character.traits)
+            self._system_prompt = CORE_SYSTEMT_PROMPT.format(
+                name=self.character.name,
+                age=self.character.age,
+                bio=bio,
+                personality=personality,
+                backstory=backstory,
+                message_examples=message_examples,
+                style=style,
+                traits=traits,
+            )
 
-            if self.character.message_examples:
-                prompt_parts.append(
-                    "\nHere are some examples of your style (Please avoid repeating any of these):"
-                )
-                if self.character.message_examples:
-                    prompt_parts.extend(
-                        f"- {example}" for example in self.character.message_examples
-                    )
-
-            self._system_prompt = "\n".join(prompt_parts)
-        print(self._system_prompt)
         return self._system_prompt
 
     async def prompt_llm(
@@ -94,6 +99,8 @@ class BaseAgent:
     ) -> str:
         """Generate text using the configured LLM provider"""
         system_prompt = system_prompt or self._construct_system_prompt()
+        print("System prompt:")
+        print(system_prompt)
         past_messages = (
             await self.agent.aget_state(
                 config={"configurable": {"thread_id": session_id}}
@@ -111,5 +118,64 @@ class BaseAgent:
         )
         return final_state["messages"][-1].content
 
-    async def stream_execute(self) -> None:
-        pass
+    async def stream_execute(
+        self, session_id: str, prompt: str, system_prompt: str = None
+    ):
+        system_prompt = system_prompt or self._construct_system_prompt()
+        print("System prompt:")
+        print(system_prompt)
+        past_messages = (
+            await self.agent.aget_state(
+                config={"configurable": {"thread_id": session_id}}
+            )
+        ).values.get("messages")
+        if not past_messages:
+            print("first time")
+            await self.agent.aupdate_state(
+                {"configurable": {"thread_id": session_id}},
+                {"messages": [SystemMessage(content=system_prompt)]},
+            )
+        sent_message = HumanMessage(content=prompt)
+        results = self.agent.astream(
+            {"messages": [sent_message]},
+            stream_mode="messages",
+            config={"configurable": {"thread_id": session_id}},
+        )
+        return results
+
+    async def memory_reset(self, session_id: str):
+        """
+        Erase all messages associated with the given `thread_id` from the agent's state.
+
+        Args:
+            state: The current state of the agent, containing a list of messages.
+            thread_id: The thread ID for which messages should be erased.
+
+        Returns:
+            A new AgentState with the filtered messages.
+        """
+        config = {"configurable": {"thread_id": session_id}}
+        past_messages = (await self.agent.aget_state(config=config)).values.get(
+            "messages"
+        )
+        print(past_messages)
+        # await self.agent.aupdate_state(
+        #     config, {"messages": [RemoveMessage(id=m.id) for m in past_messages]}
+        # )
+        # tasks = [
+        #     asyncio.create_task(
+        #         self.agent.aupdate_state(
+        #             config,
+        #             {"messages": RemoveMessage(id=message.id)},
+        #         )
+        #     )
+        #     for message in past_messages
+        # ]
+        # for task in tasks:
+        #     await task
+        await self.memory.aclear_by_thread_id(config=config)
+        print("here")
+        past_messages = (await self.agent.aget_state(config=config)).values.get(
+            "messages"
+        )
+        print(past_messages)
