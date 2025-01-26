@@ -83,6 +83,14 @@
             "actions": [
                 "handle_messages"
             ]
+        },
+        {
+            "name": "twitter",
+            "actions": [
+                "post_tweet",
+                "like_tweet",
+                "reply_tweet"
+            ]
         }
     ]
 }

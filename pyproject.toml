@@ -43,6 +43,7 @@ dependencies = [
     "python-telegram-bot>=21.10",
     "ipython>=8.31.0",
     "ipykernel>=6.29.5",
+    "twikit>=2.2.1",
 ]
 
 [dependency-groups]
