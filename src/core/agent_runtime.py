@@ -8,5 +8,4 @@ class AgentRuntime:
         self.telegram_connection = TelegramConnection(agent=self.agent)
 
     def run(self):
-        while True:
-            self.telegram_connection.run()
+        self.telegram_connection.run()

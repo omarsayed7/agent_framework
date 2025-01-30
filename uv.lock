@@ -1301,6 +1301,7 @@ dependencies = [
     { name = "python-telegram-bot" },
     { name = "setuptools" },
     { name = "streamlit" },
+    { name = "telethon" },
     { name = "tiktoken" },
     { name = "uvicorn" },
 ]
@@ -1342,6 +1343,7 @@ requires-dist = [
     { name = "python-telegram-bot", specifier = ">=21.10" },
     { name = "setuptools", specifier = "~=75.6.0" },
     { name = "streamlit", specifier = "~=1.40.1" },
+    { name = "telethon", specifier = ">=1.38.1" },
     { name = "tiktoken", specifier = ">=0.8.0" },
     { name = "uvicorn", specifier = "~=0.32.1" },
 ]
@@ -1976,6 +1978,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/cd/05/0a34433a064256a57
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl", hash = "sha256:1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0", size = 11842 },
 ]
+
+[[package]]
+name = "pyaes"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/66/2c17bae31c906613795711fc78045c285048168919ace2220daa372c7d72/pyaes-1.6.1.tar.gz", hash = "sha256:02c1b1405c38d3c370b085fb952dd8bea3fadcee6411ad99f312cc129c536d8f", size = 28536 }
 
 [[package]]
 name = "pyarrow"
@@ -2646,6 +2654,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b0/e5/2bf2daa9c98658f1474bb64e7de030cbc4182b5f2b2196536efedaef02cb/streamlit-1.40.2.tar.gz", hash = "sha256:0cc131fc9b18065feaff8f6f241c81164ad37d8d9e3a85499a0240aaaf6a6a61", size = 8265763 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ae/53/418536f5d0b87bfbe7bbd8c001983c27e9474f82723bd2e529660fd9a534/streamlit-1.40.2-py2.py3-none-any.whl", hash = "sha256:7f6d1379a590f9625a6aee79ca73ceccff03cd2e05a3acbe5fe98915c27a7ffe", size = 8644775 },
+]
+
+[[package]]
+name = "telethon"
+version = "1.38.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyaes" },
+    { name = "rsa" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5d/91/e76edf7747af0b8c2e79e626f7bce8f90f7e8d3a06bd0c25e8885cc79f23/Telethon-1.38.1.tar.gz", hash = "sha256:f9866c1e37197a0894e0c02aa56a6359bffb14a585e88e18e3e819df4fda399a", size = 627615 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/13/01745f9c0dd1dea51028959dc881ceb960b950dae9093d84c3f2ec891527/Telethon-1.38.1-py3-none-any.whl", hash = "sha256:30c187017501bfb982b8af5659f864dda4108f77ea49cfce61e8f6fdb8a18d6e", size = 702175 },
 ]
 
 [[package]]

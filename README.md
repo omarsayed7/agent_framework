@@ -4,3 +4,6 @@
 3- resend functionality[Need HIL functionality].
 4- history reset logic[DONE].
 
+# TODO
+1- Blueprint for the AgentRuntime. [chracter information/connections, an empty mongodb].
+2- Python requiriement file.

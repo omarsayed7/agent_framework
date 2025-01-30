@@ -1,15 +1,4 @@
 from __future__ import annotations
-
-# import logging
-# from telegram import Update
-# from telegram.ext import (
-#     ApplicationBuilder,
-#     CommandHandler,
-#     MessageHandler,
-#     filters,
-#     ContextTypes,
-# )
-
 import os
 from dotenv import load_dotenv
 
@@ -19,7 +8,7 @@ BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 import asyncio
 import logging
-import os
+import requests
 
 from uuid import uuid4
 from telegram import BotCommandScopeAllGroupChats, Update, constants
@@ -51,7 +40,6 @@ from connections.telegram.utils import (
     split_into_chunks,
     edit_message_with_retry,
     get_stream_cutoff_values,
-    is_allowed,
     get_reply_to_message_id,
     add_chat_request_to_usage_tracker,
     error_handler,
@@ -109,6 +97,43 @@ class TelegramConnection:
         self.usage = {}
         self.last_message = {}
         self.inline_queries_cache = {}
+
+    def set_bot_name(self, token: str, name: str, language_code: str = None):
+        """
+        Set a new name for the bot
+        """
+        url = f"https://api.telegram.org/bot{token}/setMyName"
+        payload = {"name": name}
+        if language_code:
+            payload["language_code"] = language_code
+        response = requests.post(url, json=payload, timeout=10)
+        return response.json()
+
+    def set_bot_description(
+        self, token: str, description: str, language_code: str = None
+    ):
+        """
+        Set a new description for the bot
+        """
+        url = f"https://api.telegram.org/bot{token}/setMyDescription"
+        payload = {"description": description}
+        if language_code:
+            payload["language_code"] = language_code
+        response = requests.post(url, json=payload, timeout=10)
+        return response.json()
+
+    def set_bot_short_description(
+        self, token: str, short_description: str, language_code: str = None
+    ):
+        """
+        Set a new short-description for the bot
+        """
+        url = f"https://api.telegram.org/bot{token}/setMyShortDescription"
+        payload = {"short_description": short_description}
+        if language_code:
+            payload["language_code"] = language_code
+        response = requests.post(url, json=payload, timeout=10)
+        return response.json()
 
     async def help(self, update: Update, _: ContextTypes.DEFAULT_TYPE) -> None:
         """
@@ -633,6 +658,16 @@ class TelegramConnection:
         )
         await application.bot.set_my_commands(self.commands)
 
+    async def process_one_update(self, application: Application):
+        # Get one update from the queue
+        update = await application.update_queue.get()
+
+        # Process the update
+        await application.process_update(update)
+
+        # Shutdown the application after processing one update
+        await application.stop()
+
     def run(self):
         """
         Runs the bot indefinitely until the user presses Ctrl+C
@@ -673,3 +708,5 @@ class TelegramConnection:
         application.add_error_handler(error_handler)
 
         application.run_polling()
+        # Process one update and then shut down
+        application.run_until_complete(self.process_one_update(application))
