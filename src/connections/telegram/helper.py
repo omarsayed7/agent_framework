@@ -5,7 +5,7 @@ import os
 # Load translations
 # parent_dir_path = os.path.join(os.path.dirname(__file__), os.pardir)
 # translations_file_path = os.path.join(parent_dir_path, "translations.json")
-translations_file_path = "/home/omar.sayed@ad.cyshield/Personal/AI/lotionAI/dev/AI Agents/lotionAI_framework/src/connections/telegram/translations.json"
+translations_file_path = ""
 
 with open(translations_file_path, "r", encoding="utf-8") as f:
     translations = json.load(f)

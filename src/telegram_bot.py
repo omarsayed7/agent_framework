@@ -52,7 +52,7 @@ def main():
     description = "This bot helps you automate tasks and have fun!"
     about_text = "Your friendly personal assistant bot."
     profile_picture_path = (
-        "/home/omar.sayed@ad.cyshield/Personal/AI/lotionAI/dev/AI Agents/logo.png"
+        ""
     )
 
     # print("Setting bot commands...")
